@@ -1,0 +1,18 @@
+How to use the mk_zones_from_yaml.py tool?
+
+Assume the node YAML files are located in:
+/var/lib/hiera/depzones/dmsat1/hosts
+
+We use the bind-chroot RPM. This means that the zone files
+are located in:
+/var/named/chroot/var/named
+
+and, the configuration is located in:
+/var/named/chroot/etc
+
+The name of our DNS server is:
+dns1.svcs.dmsat1.org
+
+Now, we can run the tool with:
+mk_zones_from_yaml.py -n dns1.svcs.dmsat1.org \
+  /var/lib/hiera/depzones/dmsat1/hosts
