@@ -43,43 +43,54 @@ import yaml
 fqdn_keys = ['p', 'ilo', 'ext1', 'ext2', 'bck', 'adm']
 serial    = time.strftime("%Y%m%d%H", time.localtime())
 
-def node_to_dns(d, z, nameserver):
+def node_to_dns(y, d, z, nameserver):
   global fqdn_keys
   global serial
   for k in fqdn_keys:
-    if k in d['machine']['fqdn']:
-      hostname, sep, domainname = d['machine']['fqdn'][k].partition('.')
-      if not domainname in z['zones']:
-        z['zones'][domainname] = {
-          'ttl':        86400,
-          'nameserver': nameserver,
-          'serial':     serial,
-          'refresh':    '3H',
-          'retry':      '15M',
-          'expiry':     '1W',
-          'minimum':    '1D',
-          'addresses':  {hostname: d['machine']['ipv4'][k].split('/')[0]},
-        }
-      else:
-        z['zones'][domainname]['addresses'][hostname] = d['machine']['ipv4'][k].split('/')[0]
-    # AB: we always make class C reverse zones!
-    if k in d['machine']['ipv4']:
-      quads  = d['machine']['ipv4'][k].split('/')[0].split('.')
-      arpa   = '%s' % ('.'.join(quads[0:3]),)
-      num    = quads[3]
-      if not arpa in z['arpas']:
-        z['arpas'][arpa] = {
-          'ttl':        86400,
-          'nameserver': nameserver,
-          'serial':     serial,
-          'refresh':    '3H',
-          'retry':      '15M',
-          'expiry':     '1W',
-          'minimum':    '1D',
-          'pointers':   {num: "%s" % (d['machine']['fqdn'][k],)},
-        }
-      else:
-        z['arpas'][arpa]['pointers'][num] = "%s" % (d['machine']['fqdn'][k],)
+    try:
+      if k in d['machine']['fqdn']:
+        hostname, sep, domainname = d['machine']['fqdn'][k].partition('.')
+        if not domainname in z['zones']:
+          z['zones'][domainname] = {
+            'ttl':        86400,
+            'nameserver': nameserver,
+            'serial':     serial,
+            'refresh':    '3H',
+            'retry':      '15M',
+            'expiry':     '1W',
+            'minimum':    '1D',
+            'addresses':  {hostname: d['machine']['ipv4'][k].split('/')[0]},
+          }
+        else:
+          if hostname in z['zones'][domainname]['addresses']:
+            print >> sys.stderr, "ERROR duplicate %s in %s, %s" % (hostname, domainname, y)
+            sys.exit(1)
+          z['zones'][domainname]['addresses'][hostname] = d['machine']['ipv4'][k].split('/')[0]
+      # AB: we always make class C reverse zones!
+      if k in d['machine']['ipv4']:
+        quads  = d['machine']['ipv4'][k].split('/')[0].split('.')
+        arpa   = '%s' % ('.'.join(quads[0:3]),)
+        num    = quads[3]
+        if not arpa in z['arpas']:
+          z['arpas'][arpa] = {
+            'ttl':        86400,
+            'nameserver': nameserver,
+            'serial':     serial,
+            'refresh':    '3H',
+            'retry':      '15M',
+            'expiry':     '1W',
+            'minimum':    '1D',
+            'pointers':   {num: "%s" % (d['machine']['fqdn'][k],)},
+          }
+        else:
+          if num in z['arpas'][arpa]['pointers']:
+            print >> sys.stderr, "ERROR duplicate %s in %s, %s" % (num, arpa, y)
+            sys.exit(1)
+          z['arpas'][arpa]['pointers'][num] = "%s" % (d['machine']['fqdn'][k],)
+    except KeyError, e:
+      print >> sys.stderr, str(e)
+      print >> sys.stderr, "ERROR: occured in %s" % (y,)
+      sys.exit(1)
 
 def write_custom_zone(z, fd):
   print >> fd, '''zone "%(zone)s." IN {
@@ -312,14 +323,14 @@ dns_zones = {
 
 for y in yaml_files:
   try:
-    f = open(y, 'r')
+    f = open(os.path.join(yaml_dir, y), 'r')
   except IOError, e:
     print >> sys.stderr, str(e)
     sys.exit(1)
 
   d = yaml.load(f)
   f.close()
-  node_to_dns(d, dns_zones, nameserver)
+  node_to_dns(y, d, dns_zones, nameserver)
 
 fd = open(os.path.join(conf_dir, 'named.custom.zones'), 'w')
 write_custom_zones_config(dns_zones, fd)
