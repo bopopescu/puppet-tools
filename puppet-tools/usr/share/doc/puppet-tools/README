@@ -1,3 +1,15 @@
+How to use the mk_cobbler.py tool?
+
+Assume a node YAML file is:
+/var/lib/hiera/depzones/dmsat1/hosts/ant1.svcs.dmsat1.org.yaml
+
+The Cobbler script is put to stdout with:
+
+mk_cobbler.py -d dmsat1 -o SpacewalkDefaultOrganization \
+  -s d21sw1.svcs.dmsat1.org \
+  /var/lib/hiera/depzones/dmsat1/hosts/ant1.svcs.dmsat1.org.yaml
+
+
 How to use the mk_zones_from_yaml.py tool?
 
 Assume the node YAML files are located in:

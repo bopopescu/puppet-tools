@@ -4,7 +4,8 @@
 # SCRIPT
 #   mk_cobbler.py
 # DESCRIPTION
-#   Create a Cobbler script from a YAML file.
+#   Create a Cobbler script from a node YAML file. The node
+#   YAML file must have the "machine" key.
 # DEPENDENCIES
 # FAILURE
 # AUTHORS
@@ -39,6 +40,8 @@ import optparse
 import sys
 import time
 import yaml
+
+machine_types = ['dl3x0', 'kvm', 'rhev']
 
 def print_dl3x0_prod():
   print '''$COBBLER system edit \\
@@ -151,7 +154,13 @@ def print_kvm_nic(n, name):
   --ip-address=${%(name)s_IP} \\
   --subnet=${%(name)s_SUBNET_MASK}''' % d
 
-def print_cobbler(d, depzone, swip):
+def check_parameters(d, depzone, swip):
+  global machine_types
+  if not d['machine']['machinetype'] in machine_types:
+    print >> sys.stderr, "ERROR: machine type \"%s\" not in \"%s\"" % (d['machine']['machinetype'], ' '.join(machine_types))
+    sys.exit(1)
+
+def print_cobbler(d, depzone, org, swip):
   # Mandatory parameters first.
   params = {
     't':       time.strftime("%Y-%m-%d %H:%M", time.localtime()),
@@ -169,6 +178,7 @@ def print_cobbler(d, depzone, swip):
     ),
     'mpip':    str(ipaddr.IPv4Network(d['machine']['ipv4']['p']).netmask),
     'dpip':    d['machine']['ipv4']['dp'],
+    'org':     org,
     'sip':     swip,
     'prov':    d['machine']['provisioning'],
   } # end of params
@@ -255,8 +265,6 @@ def print_cobbler(d, depzone, swip):
     params['maip'] = ''
     params['daip'] = ''
 
-  #print params
-  #sys.exit(0)
   print '''#!/bin/bash
 #
 # SCRIPT
@@ -293,7 +301,7 @@ def print_cobbler(d, depzone, swip):
 # DEPENDENCIES
 #   The profile should not yet exist in cobbler. If it does,
 #   remove it with:
-#   sudo cobbler system remove --name=dmsat1_%(mach)s_%(machine)s
+#   sudo cobbler system remove --name=%(org)s_%(mach)s_%(machine)s
 #   Adding an existing profile results in a clear warning
 #   from cobbler. No harm is done.
 # FAILURE
@@ -332,7 +340,7 @@ NAME="%(machine)s"
 DEPZONE="%(depzone)s"
 OWNERS="example"
 PROFILE="bare-%(mach)s-6u5-x_y_z"
-ORG="SpacewalkDefaultOrganization"
+ORG="%(org)s"
 MACH="%(mach)s"
 COMMENT="%(comment)s"
 GATEWAY="%(dpip)s"
@@ -363,7 +371,7 @@ PROD_DNS_NAME="${HOSTNAME}"''' % params
     print 'ADMIN_IP="%s"' % (params['aip'],)
     print 'ADMIN_SUBNET_MASK="%s"' % ipaddr.IPv4Network(params['saip']).netmask
 
-  if params['mach'] == 'kvm':
+  if params['mach'] in ['kvm', 'rhev']:
     # AB: we keep the following order:
     # * nic1: production
     # * nic2: cluster interconnect, if cip exists
@@ -412,7 +420,7 @@ ETH6_NAME="em6"
 ETH7_NAME="em7"
 ETH8_NAME="em8"'''
 
-  if d['machine']['proxy'] == 'yes':
+  if d['machine']['use_proxy'] == 'yes':
     print 'PROXY="%s"' % (params['prov'],)
     print 'P="proxy_"'
 
@@ -440,7 +448,7 @@ $COBBLER system add \\
   --name-servers-search=$NAMESERVERS_SEARCH \\
   --redhat-management-key='<<inherit>>' \\'''
 
-  if d['machine']['proxy'] == 'yes':
+  if d['machine']['use_proxy'] == 'yes':
     print '''  --redhat-management-server='<<inherit>>' \\
   --server=$PROXY'''
   else:
@@ -495,13 +503,12 @@ $COBBLER system add \\
       print_kvm_nic(int, 'ADMIN')
       int += 1
 
-usage = '''create Cobbler script from YAML file'''
+usage = '''usage: %prog [options] <node YAML file>'''
 
-description = '''This script creates a Cobbler script from a YAML file.'''
+description = '''This script creates a Cobbler script from a node YAML file.'''
 
 parser = optparse.OptionParser(
   usage = usage,
-  version = '1.0',
   description = description,
 )
 parser.add_option(
@@ -516,17 +523,26 @@ parser.add_option(
   "--spacewalk-server",
   dest = "spacewalk_server",
   default = None,
-  help = "IP of Spacewalk server of proxy used for deployment",
+  help = "IP of Spacewalk server or proxy used for deployment",
+)
+parser.add_option(
+  "-o",
+  "--spacewalk-org",
+  dest = "spacewalk_org",
+  default = None,
+  help = "Organization name on Spacewalk used for deployment",
 )
 (options, args) = parser.parse_args()
 
 if not options.deployment_zone:
   parser.error('Error: specify Deployment zone, -d or --deployment-zone')
+if not options.spacewalk_org:
+  parser.error('Error: specify Spacewalk org, -o or --spacewalk-org')
 if not options.spacewalk_server:
   parser.error('Error: specify Spacewalk server, -s or --spacewalk-server')
 
 if len(args) != 1:
-  parser.error('Error: specify YAML file as first argumanent')
+  parser.error('Error: specify node YAML file as first argumanent')
 
 yaml_file = args[0]
 try:
@@ -537,4 +553,4 @@ except IOError, e:
 
 d = yaml.load(f)
 f.close()
-print_cobbler(d, options.deployment_zone, options.spacewalk_server)
+print_cobbler(d, options.deployment_zone, options.spacewalk_org, options.spacewalk_server)

@@ -8,8 +8,14 @@ Vendor:       MSAT
 Source:       %{name}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-root
 Requires:     PyYAML
+Requires:     python-ipaddr
+Requires:     python-iptools
 
 %description
+Tools to aid automation for Puppet. It includes:
+* tool to create Cobbler scripts from node YAML files
+* tool to create DNS records from directory of node YAML
+  files
 
 %prep
 %setup -q -n %{name}

@@ -248,7 +248,6 @@ description = '''This script creates DNS zone files from node YAML files. The in
 
 parser = optparse.OptionParser(
   usage = usage,
-  version = '1.0',
   description = description,
 )
 parser.add_option(
