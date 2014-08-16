@@ -242,7 +242,7 @@ def write_db_zones(d, zones_dir):
     write_arpa_file(d['arpas'][a], fd)
     fd.close()
 
-usage = '''create DNS zones from node YAML files'''
+usage = '''usage: %prog [options] <node YAML dir>'''
 
 description = '''This script creates DNS zone files from node YAML files. The input is the directory where the node YAML files are located. The output is a custom zone configuration file and the zone files.'''
 
