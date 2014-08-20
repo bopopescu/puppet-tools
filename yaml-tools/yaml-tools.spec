@@ -1,4 +1,4 @@
-Name:         puppet-tools
+Name:         yaml-tools
 Version:      0.1.1
 Release:      1
 Summary:      Puppet tools

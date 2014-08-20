@@ -1,5 +1,5 @@
 #!/bin/bash
-RPM=puppet-tools
+RPM=yaml-tools
 tar -cz --exclude=.git -f ~/rpm/SOURCES/${RPM}.tar.gz ${RPM}
 rpmbuild --target noarch --clean -bb ${RPM}.spec
 RC=$?
