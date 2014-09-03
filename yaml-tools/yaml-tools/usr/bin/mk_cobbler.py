@@ -383,6 +383,7 @@ PROD_DNS_NAME="${HOSTNAME}"''' % params
       print 'MAC_ETH%d="%s"' % (index + 1, item)
     for index, item in enumerate(d['machine']['nics']):
       print 'ETH%d_NAME="em%d"' % (index + 1, index + 1)
+    print 'KSDEV="${MAC_ETH1}"'
 
   elif params['mach'] == 'dl3x0':
     # AB: 4 means:
@@ -414,11 +415,17 @@ MAC_ETH8="%(nic7)s"''' % params
 ETH2_NAME="em2"
 ETH3_NAME="em3"
 ETH4_NAME="em4"'''
+
     if l == 8:
       print '''ETH5_NAME="em5"
 ETH6_NAME="em6"
 ETH7_NAME="em7"
 ETH8_NAME="em8"'''
+
+    if l == 4:
+      print 'KSDEV="${MAC_ETH4}"'
+    else:
+      print 'KSDEV="${MAC_ETH8}"'
 
   if d['machine']['use_proxy'] == 'yes':
     print 'PROXY="%s"' % (params['prov'],)
@@ -439,7 +446,7 @@ $COBBLER system add \\
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --owners=${OWNERS} \\
   --profile=${PROFILE}:${ORGNUM}:${ORG} \\
-  --kopts="ip=${PROD_IP} netmask=${PROD_SUBNET} ksdevice=${MAC_ETH1} hostname=${HOSTNAME} depzone=${DEPZONE} ipv6.disable=1 biosdevname=1" \\
+  --kopts="ip=${PROD_IP} netmask=${PROD_SUBNET} ksdevice=${KSDEV} hostname=${HOSTNAME} depzone=${DEPZONE} ipv6.disable=1 biosdevname=1" \\
   --kopts-post="ipv6.disable=1 biosdevname=1" \\
   --netboot-enabled=0 \\
   --comment=${COMMENT} \\
