@@ -154,13 +154,13 @@ def print_kvm_nic(n, name):
   --ip-address=${%(name)s_IP} \\
   --subnet=${%(name)s_SUBNET_MASK}''' % d
 
-def check_parameters(d, depzone, swip):
+def check_parameters(d, depzone, dns):
   global machine_types
   if not d['machine']['machinetype'] in machine_types:
     print >> sys.stderr, "ERROR: machine type \"%s\" not in \"%s\"" % (d['machine']['machinetype'], ' '.join(machine_types))
     sys.exit(1)
 
-def print_cobbler(d, depzone, org, swip):
+def print_cobbler(d, depzone, org, dns):
   # Mandatory parameters first.
   params = {
     't':       time.strftime("%Y-%m-%d %H:%M", time.localtime()),
@@ -179,7 +179,7 @@ def print_cobbler(d, depzone, org, swip):
     'mpip':    str(ipaddr.IPv4Network(d['machine']['ipv4']['p']).netmask),
     'dpip':    d['machine']['ipv4']['dp'],
     'org':     org,
-    'sip':     swip,
+    'dnsip':   ' '.join(dns),
     'prov':    d['machine']['provisioning'],
   } # end of params
 
@@ -292,7 +292,7 @@ def print_cobbler(d, depzone, org, swip):
 #   A:  %(saip)-18.18s gw: %(daip)s
 #
 #   DNS servers:
-#   * %(sip)s
+#   * %(dnsip)s
 #
 # ARGUMENTS
 #   None.
@@ -344,7 +344,7 @@ ORG="%(org)s"
 MACH="%(mach)s"
 COMMENT="%(comment)s"
 GATEWAY="%(dpip)s"
-NAMESERVERS="%(sip)s"
+NAMESERVERS="%(dnsip)s"
 NAMESERVERS_SEARCH="%(domain)s"
 HOSTNAME="%(fqdn)s"
 PROD_IP="%(pip)s"
@@ -423,6 +423,8 @@ ETH8_NAME="em8"'''
   if d['machine']['use_proxy'] == 'yes':
     print 'PROXY="%s"' % (params['prov'],)
     print 'P="proxy_"'
+  else:
+    print 'P=""'
 
   print
   print '''$COBBLER system list | grep -q ${ORG}_${MACH}_${P}${NAME}$
@@ -520,10 +522,10 @@ parser.add_option(
 )
 parser.add_option(
   "-s",
-  "--spacewalk-server",
-  dest = "spacewalk_server",
+  "--dns-server",
+  dest = "dns_servers",
   default = None,
-  help = "IP of Spacewalk server or proxy used for deployment",
+  help = "IP or comma separated list of IPs of DNS server(s) used for deployment",
 )
 parser.add_option(
   "-o",
@@ -538,11 +540,13 @@ if not options.deployment_zone:
   parser.error('Error: specify Deployment zone, -d or --deployment-zone')
 if not options.spacewalk_org:
   parser.error('Error: specify Spacewalk org, -o or --spacewalk-org')
-if not options.spacewalk_server:
-  parser.error('Error: specify Spacewalk server, -s or --spacewalk-server')
+if not options.dns_servers:
+  parser.error('Error: specify DNS server(s), -s or --dns-server')
 
 if len(args) != 1:
   parser.error('Error: specify node YAML file as first argumanent')
+
+dns = options.dns_servers.split(',')
 
 yaml_file = args[0]
 try:
@@ -553,4 +557,4 @@ except IOError, e:
 
 d = yaml.load(f)
 f.close()
-print_cobbler(d, options.deployment_zone, options.spacewalk_org, options.spacewalk_server)
+print_cobbler(d, options.deployment_zone, options.spacewalk_org, dns)
