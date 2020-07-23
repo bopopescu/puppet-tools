@@ -48,21 +48,21 @@ def print_dl3x0_prod():
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=${ETH1_NAME} \\
   --mac=${MAC_ETH1} \\
-  --bonding=slave \\
-  --bonding-master=bond0
+  --bonding=subordinate \\
+  --bonding-main=bond0
 
 $COBBLER system edit \\
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=${ETH2_NAME} \\
   --mac=${MAC_ETH2} \\
-  --bonding=slave \\
-  --bonding-master=bond0
+  --bonding=subordinate \\
+  --bonding-main=bond0
 
 $COBBLER system edit \\
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=bond0 \\
   --mac=${MAC_ETH1} \\
-  --bonding=master \\
+  --bonding=main \\
   --bonding-opts="mode=1 primary=${ETH1_NAME} miimon=100" \\
   --static=1 \\
   --ip-address=${PROD_IP} \\
@@ -75,21 +75,21 @@ def print_dl3x0_cic():
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=${ETH3_NAME} \\
   --mac=${MAC_ETH3} \\
-  --bonding=slave \\
-  --bonding-master=bond1
+  --bonding=subordinate \\
+  --bonding-main=bond1
 
 $COBBLER system edit \\
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=${ETH4_NAME} \\
   --mac=${MAC_ETH4} \\
-  --bonding=slave \\
-  --bonding-master=bond1
+  --bonding=subordinate \\
+  --bonding-main=bond1
 
 $COBBLER system edit \\
   --name=${ORG}_${MACH}_${P}${NAME} \\
   --interface=bond1 \\
   --mac=${MAC_ETH3} \\
-  --bonding=master \\
+  --bonding=main \\
   --bonding-opts="mode=1 primary=${ETH3_NAME} miimon=100" \\
   --static=1 \\
   --ip-address=${CLUSTER_IP} \\

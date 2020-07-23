@@ -94,7 +94,7 @@ def node_to_dns(y, d, z, nameserver):
 
 def write_custom_zone(z, fd):
   print >> fd, '''zone "%(zone)s." IN {
-  type master;
+  type main;
   file "%(zone)s.zone";
   notify yes;
   allow-transfer { any; };
@@ -106,7 +106,7 @@ def write_custom_arpa(a, fd):
   rev.reverse()
   rev = '.'.join(rev)
   print >> fd, '''zone "%(rev)s.in-addr.arpa." IN {
-  type master;
+  type main;
   file "%(arpa)s.in-addr.arpa";
   notify yes;
   allow-transfer { any; };
@@ -151,17 +151,17 @@ def write_zone_file(zone, fd):
       ; NN is the daily sequence number.
       ; After editing this file, always
       ; update this serial number to give
-      ; slaves a chance to keep
+      ; subordinates a chance to keep
       ; synchronized.
         %(refresh)s              ; refresh. The refresh interval
-      ; tells a slave for the zone how
+      ; tells a subordinate for the zone how
       ; often to check that the data for
       ; this zone is up to date.
-        %(retry)s             ; retry. If a slave fails to connect
-      ; to the master, it will retry in
+        %(retry)s             ; retry. If a subordinate fails to connect
+      ; to the main, it will retry in
       ; this amount of time. So here it is
       ; 15 minutes.
-        %(expiry)s              ; expiry. If a slave did not contact
+        %(expiry)s              ; expiry. If a subordinate did not contact
       ; the server for this amount of
       ; time, its records become useless,
       ; i.e. are expired.
@@ -193,17 +193,17 @@ def write_arpa_file(arpa, fd):
       ; NN is the daily sequence number.
       ; After editing this file, always
       ; update this serial number to give
-      ; slaves a chance to keep
+      ; subordinates a chance to keep
       ; synchronized.
         %(refresh)s              ; refresh. The refresh interval
-      ; tells a slave for the zone how
+      ; tells a subordinate for the zone how
       ; often to check that the data for
       ; this zone is up to date.
-        %(retry)s             ; retry. If a slave fails to connect
-      ; to the master, it will retry in
+        %(retry)s             ; retry. If a subordinate fails to connect
+      ; to the main, it will retry in
       ; this amount of time. So here it is
       ; 15 minutes.
-        %(expiry)s              ; expiry. If a slave did not contact
+        %(expiry)s              ; expiry. If a subordinate did not contact
       ; the server for this amount of
       ; time, its records become useless,
       ; i.e. are expired.
